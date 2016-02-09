@@ -13,16 +13,20 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
 {
     //MARK: **************** OUTLETS *******************
     
-    @IBOutlet weak var _messageLabel  : UILabel!
-    @IBOutlet weak var _latitudeLabel : UILabel!
-    @IBOutlet weak var _longitudeLabel: UILabel!
-    @IBOutlet weak var _addressLabel  : UILabel!
-    @IBOutlet weak var _tagButton     : UIButton!
-    @IBOutlet weak var _getButton     : UIButton!
+    @IBOutlet weak var _messageLabel   : UILabel!
+    @IBOutlet weak var _latitudeLabel  : UILabel!
+    @IBOutlet weak var _longitudeLabel : UILabel!
+    @IBOutlet weak var _addressLabel   : UILabel!
+    @IBOutlet weak var _tagButton      : UIButton!
+    @IBOutlet weak var _getButton      : UIButton!
     
-    //MARK: *************** PROPERTIES *****************
+    //MARK: ********** INSTANCE VARIABLES ************
     
-    let _locationManager = CLLocationManager()
+    let _locationManager  =  CLLocationManager()
+    var _updatingLocation = false
+    
+    var _location          : CLLocation?
+    var _lastLocationError : NSError?
     
     //MARK: **************** ACTIONS *******************
     
@@ -36,15 +40,15 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
         default                   : break
         }
         
-        _locationManager.delegate = self
-        _locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        _locationManager.startUpdatingLocation()
+        startLocationManager()
+        updateLabels()
     }
 
     //MARK: ********** OVERRIDED FUNCTIONS **********
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        updateLabels()
         // Do any additional setup after loading the view, typically from a nib.
     }
 
@@ -65,16 +69,75 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
         presentViewController(alert, animated: true, completion: nil)
     }
     
+    func updateLabels() {
+        if let location = _location {
+            _latitudeLabel.text  = String(format: "%.8f", location.coordinate.latitude)
+            _longitudeLabel.text = String(format: "%.8f", location.coordinate.longitude)
+            _tagButton.hidden    = false
+            _messageLabel.text   = ""
+        } else {
+            _latitudeLabel.text  = ""
+            _longitudeLabel.text = ""
+            _addressLabel.text   = ""
+            _tagButton.hidden    = true
+            
+            let statusMessage : String
+            
+            if let error = _lastLocationError {
+                if error.domain == kCLErrorDomain && error.code == CLError.Denied.rawValue {
+                    statusMessage = "Location Services Disabled"
+                } else {
+                    statusMessage = "Error Getting Location"
+                }
+            } else if !CLLocationManager.locationServicesEnabled() {
+                statusMessage = "Location Services Disabled"
+            } else if _updatingLocation {
+                statusMessage = "Searching..."
+            } else {
+                statusMessage = "Tap 'Get My Location' to Start"
+            }
+            
+            _messageLabel.text   = statusMessage
+        }
+    }
+    
+    func stopLocationManager() {
+        if _updatingLocation {
+            _locationManager.stopUpdatingLocation()
+            _locationManager.delegate = nil
+            _updatingLocation = false
+        }
+    }
+    
+    func startLocationManager() {
+        if CLLocationManager.locationServicesEnabled() {
+            _locationManager.delegate = self
+            _locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+            _locationManager.startUpdatingLocation()
+            _updatingLocation = true
+        }
+    }
     
     //MARK: - CLLocationManagerDelegate
     
     func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
         print("didFailWithError \(error)")
+        
+        if error.code == CLError.LocationUnknown.rawValue { return }
+        
+        _lastLocationError = error
+        
+        stopLocationManager()
+        updateLabels()
     }
     
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let newLocation = locations.last!
         print("didUpdateLocations \(newLocation)")
+        
+        _lastLocationError = nil
+        _location = newLocation
+        updateLabels()
     }
     
 }
