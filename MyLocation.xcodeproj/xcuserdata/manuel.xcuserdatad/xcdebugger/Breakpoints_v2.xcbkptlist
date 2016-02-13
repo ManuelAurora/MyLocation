@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "MyLocation/CurrentLocationViewController.swift"
-            timestampString = "477048305.07635"
+            timestampString = "477058301.692072"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "97"
-            endingLineNumber = "97"
+            startingLineNumber = "127"
+            endingLineNumber = "127"
             landmarkName = "updateLabels()"
             landmarkType = "5">
          </BreakpointContent>
@@ -26,11 +26,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "MyLocation/CurrentLocationViewController.swift"
-            timestampString = "477048305.07635"
+            timestampString = "477058301.692072"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "117"
-            endingLineNumber = "117"
+            startingLineNumber = "158"
+            endingLineNumber = "158"
             landmarkName = "updateLabels()"
             landmarkType = "5">
          </BreakpointContent>
