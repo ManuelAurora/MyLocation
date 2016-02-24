@@ -58,7 +58,7 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
         updateLabels()
         configureGetButton()
     }
-
+    
     //MARK: ********** OVERRIDED FUNCTIONS **********
     
     override func viewDidLoad() {
@@ -67,7 +67,7 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
         configureGetButton()
         // Do any additional setup after loading the view, typically from a nib.
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -201,33 +201,49 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
         
         if newLocation.timestamp.timeIntervalSinceNow < -5 { return }
         if newLocation.horizontalAccuracy < 0 { return }
-        if _location == nil || _location!.horizontalAccuracy > newLocation.horizontalAccuracy {
-            _lastLocationError = nil
-            _location = newLocation
-            updateLabels()
+        
+        var distance = CLLocationDistance(DBL_MAX)
+        
+        if let location = _location { distance = newLocation.distanceFromLocation(location)
             
-            if newLocation.horizontalAccuracy <= _locationManager.desiredAccuracy { print("*** We're done!")
-                stopLocationManager()
-                configureGetButton()
-            }
-            
-            if !_performingReverseGeocoding {
-                print("*** Going to geocode")
-                _performingReverseGeocoding = true
+            if _location == nil || _location!.horizontalAccuracy > newLocation.horizontalAccuracy {
+                _lastLocationError = nil
+                _location = newLocation
+                updateLabels()
                 
-                _geocoder.reverseGeocodeLocation(newLocation, completionHandler: {placemarks, error in
-                    print("*** Found placemarks: \(self._placemark), error: \(error)")
+                if newLocation.horizontalAccuracy <= _locationManager.desiredAccuracy { print("*** We're done!")
+                    stopLocationManager()
+                    configureGetButton()
+                }
+                
+                if distance > 0 { _performingReverseGeocoding = false }
+                
+                if !_performingReverseGeocoding {
+                    print("*** Going to geocode")
+                    _performingReverseGeocoding = true
                     
-                    self._lastGeocodingError = error
-                    
-                    guard error == nil, let p = placemarks where !p.isEmpty else { self._placemark = nil; return }
-                    self._placemark = p.last
-                    
-                    self._performingReverseGeocoding = false
-                    self.updateLabels()
-                })
+                    _geocoder.reverseGeocodeLocation(newLocation, completionHandler: {placemarks, error in
+                        print("*** Found placemarks: \(self._placemark), error: \(error)")
+                        
+                        self._lastGeocodingError = error
+                        
+                        guard error == nil, let p = placemarks where !p.isEmpty else { self._placemark = nil; return }
+                        self._placemark = p.last
+                        
+                        self._performingReverseGeocoding = false
+                        self.updateLabels()
+                    })
+                }
+            } else if distance < 1.0 {
+                let timeInterval = newLocation.timestamp.timeIntervalSinceDate(_location!.timestamp)
+                
+                if timeInterval > 10 {
+                    print("*** Force done!")
+                    stopLocationManager()
+                    updateLabels()
+                    configureGetButton()
+                }
             }
         }
     }
 }
-
